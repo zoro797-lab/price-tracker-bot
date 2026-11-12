@@ -1,0 +1,21 @@
+# إعداد النشر على Render — يُقرأ تلقائيًا عند ربط المستودع (Blueprint)
+# ملاحظة: الخطة المجانية لا تحتفظ بملفات القرص عند إعادة النشر —
+# انسخ احتياطيًا من لوحة الأدمن (/admin → النسخ الاحتياطي) قبل أي تغيير.
+services:
+  - type: web
+    name: price-tracker-bot
+    runtime: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python main.py"
+    healthCheckPath: /healthz
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      # وضع الويب هوك يُفعل تلقائيًا داخل Render عبر RENDER_EXTERNAL_URL
+      - key: USE_WEBHOOK
+        value: "true"
+      - key: BOT_TOKEN
+        sync: false      # تُدخلها يدويًا من لوحة Render (سر)
+      - key: ADMIN_IDS
+        sync: false      # تُدخلها يدويًا من لوحة Render

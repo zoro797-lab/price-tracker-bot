@@ -1,0 +1,25 @@
+# الأسرار — لا ترفعها أبدًا
+.env
+*.env
+
+# قاعدة البيانات والنسخ الاحتياطي
+data/
+*.db
+*.db-journal
+
+# سجلات
+logs/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# أدوات
+.pytest_cache/
+.mypy_cache/
+.idea/
+.vscode/

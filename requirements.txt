@@ -1,0 +1,15 @@
+# مكتبات المشروع — Python 3.11+
+aiogram>=3.13,<4
+SQLAlchemy>=2.0.30
+APScheduler>=3.10,<4
+pydantic>=2.7
+pydantic-settings>=2.3
+python-dotenv>=1.0
+requests>=2.31
+matplotlib>=3.8
+arabic-reshaper>=3.0
+python-bidi>=0.4.2
+
+# اختبارات
+pytest>=8.0
+pytest-asyncio>=0.23
