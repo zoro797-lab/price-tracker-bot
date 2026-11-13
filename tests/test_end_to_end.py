@@ -194,13 +194,13 @@ class TestChartsAndImport:
         assert Path(chart_path).stat().st_size > 10000  # صورة فعلية غير فارغة
         Path(chart_path).unlink(missing_ok=True)
 
-    def test_dispatcher_builds_and_routers_register(self):
-        """كل الراوترات تسجل بدون تعارضات — smoke test لاستيراد البوت."""
-        import main
-        dispatcher = main.create_dispatcher()
+    def test_dispatcher_builds_and_routers_register(self, dispatcher):
+        """كل الراوترات تسجل بدون تعارضات — smoke test لاستيراد البوت.
+
+        يستخدم fixture الـ dispatcher المشترك حتى لا تُربط الراوترات مرتين.
+        """
         assert dispatcher is not None
         # عدد المعالجات المُسجلة > 0
-        names = [r.name for r in dispatcher.sub_routers] if hasattr(dispatcher, "sub_routers") else []
         assert len(dispatcher.sub_routers) == 4
 
     def test_url_validation_and_providers(self):

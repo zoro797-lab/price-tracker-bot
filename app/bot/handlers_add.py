@@ -13,7 +13,7 @@ import asyncio
 import re
 
 from aiogram import Bot, F, Router
-from aiogram.filters import BaseFilter
+from aiogram.filters import BaseFilter, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
@@ -222,7 +222,7 @@ async def cb_back_to_type(callback: CallbackQuery, state: FSMContext):
 # إدخالات الأرقام — النطاق السعري
 # --------------------------------------------------------------------------
 
-@router.message(F.text, AddProductStates.waiting_min_price, EditAlertStates.waiting_min_price)
+@router.message(F.text, StateFilter(AddProductStates.waiting_min_price, EditAlertStates.waiting_min_price))
 async def msg_min_price(message: Message, state: FSMContext):
     value = parse_number(message.text or "")
     if value is None or value <= 0:
@@ -244,7 +244,7 @@ async def msg_min_price(message: Message, state: FSMContext):
     await state.set_state(AddProductStates.waiting_max_price)
 
 
-@router.message(F.text, AddProductStates.waiting_max_price, EditAlertStates.waiting_max_price)
+@router.message(F.text, StateFilter(AddProductStates.waiting_max_price, EditAlertStates.waiting_max_price))
 async def msg_max_price(message: Message, state: FSMContext):
     value = parse_number(message.text or "")
     if value is None or value <= 0:
@@ -273,7 +273,7 @@ async def msg_max_price(message: Message, state: FSMContext):
 # إدخالات الأرقام — السعر الأقصى
 # --------------------------------------------------------------------------
 
-@router.message(F.text, AddProductStates.waiting_max_price_only, EditAlertStates.waiting_max_price_only)
+@router.message(F.text, StateFilter(AddProductStates.waiting_max_price_only, EditAlertStates.waiting_max_price_only))
 async def msg_max_price_only(message: Message, state: FSMContext):
     value = parse_number(message.text or "")
     if value is None or value <= 0:
@@ -294,7 +294,7 @@ async def msg_max_price_only(message: Message, state: FSMContext):
 # إدخالات الأرقام — نسبة الانخفاض والسعر المرجعي
 # --------------------------------------------------------------------------
 
-@router.message(F.text, AddProductStates.waiting_drop_percentage, EditAlertStates.waiting_drop_percentage)
+@router.message(F.text, StateFilter(AddProductStates.waiting_drop_percentage, EditAlertStates.waiting_drop_percentage))
 async def msg_drop_percentage(message: Message, state: FSMContext):
     value = parse_number(message.text or "")
     if value is None or not (1 <= value <= 99):
@@ -356,7 +356,7 @@ async def cb_reference_choice(callback: CallbackQuery, state: FSMContext):
         await callback.answer()
 
 
-@router.message(F.text, AddProductStates.waiting_reference_price, EditAlertStates.waiting_reference_price)
+@router.message(F.text, StateFilter(AddProductStates.waiting_reference_price, EditAlertStates.waiting_reference_price))
 async def msg_reference_price(message: Message, state: FSMContext):
     value = parse_number(message.text or "")
     if value is None or value <= 0:
@@ -385,7 +385,7 @@ async def cb_skip_additional(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
 
 
-@router.message(F.text, AddProductStates.waiting_additional_drop, EditAlertStates.waiting_additional_drop)
+@router.message(F.text, StateFilter(AddProductStates.waiting_additional_drop, EditAlertStates.waiting_additional_drop))
 async def msg_additional_drop(message: Message, state: FSMContext):
     value = parse_number(message.text or "")
     if value is None or not (1 <= value <= 99):

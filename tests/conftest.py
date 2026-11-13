@@ -69,3 +69,16 @@ class FakeBot:
 @pytest.fixture()
 def fake_bot():
     return FakeBot()
+
+
+_dispatcher_singleton = None
+
+
+@pytest.fixture()
+def dispatcher():
+    """يبني dispatcher حقيقي واحد مشترك — الراوترات لا تُربط مرتين."""
+    global _dispatcher_singleton
+    if _dispatcher_singleton is None:
+        from main import create_dispatcher
+        _dispatcher_singleton = create_dispatcher()
+    return _dispatcher_singleton
