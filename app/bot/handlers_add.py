@@ -10,8 +10,10 @@
 from __future__ import annotations
 
 import asyncio
+import re
 
 from aiogram import Bot, F, Router
+from aiogram.filters import BaseFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
@@ -51,6 +53,28 @@ _EDIT_STATE_BY_STEP = {
     "ref": EditAlertStates.waiting_reference_price,
     "additional": EditAlertStates.waiting_additional_drop,
 }
+
+_URL_RE = re.compile(r"https?://\S+")
+_STORE_RE = re.compile(r"amazon\.eg|noon\.com")
+
+
+class SupportedStoreUrl(BaseFilter):
+    """فلتر بحثي: يستخرج أول رابط من الرسالة ويتحقق أنه لمتجر مدعوم.
+
+    يعيد dict {store_url: ...} فيحقن قيمة الرابط في معاملات المعالج مباشرة.
+    يستخدم re.search (وليس regexp المدمج الذي يعمل بأسلوب re.match المثبت
+    على بداية النص فيفشل عندما يكون الرابط داخل نص).
+    """
+
+    async def __call__(self, message: Message) -> dict | bool:
+        text = message.text or message.caption or ""
+        match = _URL_RE.search(text)
+        if not match:
+            return False
+        url = match.group(0).rstrip(".,;:!؟)…«»\"'")  # تنظيف علامات ترقيم من نهاية الرابط
+        if _STORE_RE.search(url):
+            return {"store_url": url}
+        return False
 
 
 # --------------------------------------------------------------------------
@@ -113,14 +137,18 @@ async def start_add_flow(bot: Bot, chat_id: int, state: FSMContext, url: str) ->
     await state.set_state(AddProductStates.waiting_alert_type)
 
 
-@router.message(F.text.regexp(r"(https?://\S+)"), F.text.regexp(r"amazon\.eg|noon\.com"))
-async def message_with_url(message: Message, state: FSMContext):
-    """أي رسالة تحتوي رابط متجر مدعوم تبدأ تدفق الإضافة مباشرة."""
+@router.message(SupportedStoreUrl())
+async def message_with_url(message: Message, state: FSMContext, store_url: str):
+    """أي رسالة تحتوي رابط متجر مدعوم تبدأ تدفق الإضافة مباشرة.
+
+    ملاحظة: نستخدم فلتر مخصص بحثي (re.search) — فلتر aiogram المدمج
+    F.text.regexp يعمل بأسلوب re.match (من بداية النص) فيفشل عندما
+    يكون الرابط داخل نص أطول.
+    """
     if await state.get_state() is not None:
         return  # داخل حالة أخرى — لا تتدخل
-    import re
-    match = re.search(r"(https?://\S+)", message.text)
-    await start_add_flow(message.bot, message.chat.id, state, match.group(1))
+    logger.info("Received store URL from user %s: %s", message.from_user.id if message.from_user else '?', store_url)
+    await start_add_flow(message.bot, message.chat.id, state, store_url)
 
 
 # --------------------------------------------------------------------------
