@@ -23,3 +23,7 @@ env/
 .mypy_cache/
 .idea/
 .vscode/
+
+# Render service metadata
+.render_service_id
+.render_service_url
