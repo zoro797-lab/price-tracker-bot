@@ -203,8 +203,32 @@ def evaluate_initial_alert(tracking: UserTracking, product: Product, price: floa
     return decision, ""
 
 
+def build_admin_link_used_message(user_info: dict, store_name: str, snapshot_title: str,
+                                  price: float | None, url: str) -> str:
+    """إشعار فوري للأدمن لحظة استخدام أحدهم البوت برابط منتج (قبل إتمام المتابعة).
+
+    شبيه بسلوك بوتات التحميل: الشخص + الرابط + المنتج المقروء.
+    """
+    username = user_info.get("username")
+    first = user_info.get("first_name") or ""
+    last = user_info.get("last_name") or ""
+    return "\n".join([
+        "🔗 تم استخدام البوت برابط منتج",
+        "",
+        f"👤 الاسم: {(first + ' ' + last).strip() or '—'}",
+        f"🆔 ID: {user_info.get('telegram_id', '—')}",
+        f"📱 Username: @{username}" if username else "📱 Username: —",
+        f"🏪 المتجر: {store_name}",
+        f"📦 المنتج: {short_text(snapshot_title, 80)}",
+        f"💰 السعر الحالي المقروء: {format_price(price)}",
+        "",
+        f"🔗 الرابط: {url}",
+        f"📅 {format_datetime(format_datetime_now())}",
+    ])
+
+
 def build_admin_new_product_message(user, product: Product, tracking: UserTracking) -> str:
-    """رسالة الأدمن عند إضافة منتج — تشمل نوع التنبيه والنطاق المحدد."""
+    """رسالة الأدمن عند تأكيد بدء المتابعة — تشمل نوع التنبيه والنطاق المحدد."""
     return "\n".join([
         "🔔 منتج جديد تمت إضافته للمتابعة",
         "",

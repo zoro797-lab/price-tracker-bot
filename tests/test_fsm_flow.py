@@ -134,9 +134,13 @@ async def test_full_price_range_flow_through_dispatcher(mock_provider, dispatche
     # 1) إرسال الرابط — عبر التوجيه الحقيقي
     r = await dispatcher.feed_update(bot=bot, update=Update(update_id=1, message=_make_message(url, 1)))
     assert not _is_unhandled(r), "رسالة الرابط وصلت unhandled!"
-    card = bot.sent[-1]
+    # أول رسالة (⏳) تُعدل لتصبح بطاقة المنتج؛ ويليها إشعار الأدمن الفوري بالرابط
+    card = bot.sent[0]
     assert "منتج تدفق كامل" in card.text
     assert "500" in card.text  # السعر الحالي ظاهر في البطاقة
+    admin_link_msg = bot.sent[-1].text
+    assert "تم استخدام البوت برابط منتج" in admin_link_msg, "لا إشعار فوري للأدمن عند استخدام الرابط!"
+    assert "336073669" in admin_link_msg and url in admin_link_msg, "إشعار الأدمن ناقص (ID أو الرابط)!"
 
     # 2) اختيار نوع التنبيه: نطاق سعري (معالج أزرار مباشرة)
     card = FakeSent(card.text)

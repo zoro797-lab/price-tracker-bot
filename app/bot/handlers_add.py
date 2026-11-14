@@ -93,7 +93,8 @@ async def _flow_prefix(state: FSMContext) -> str:
 # استقبال الرابط
 # --------------------------------------------------------------------------
 
-async def start_add_flow(bot: Bot, chat_id: int, state: FSMContext, url: str) -> None:
+async def start_add_flow(bot: Bot, chat_id: int, state: FSMContext, url: str,
+                         from_user=None) -> None:
     """التحقق من الرابط وقراءة المنتج ثم عرض بطاقة المنتج وطلب نوع التنبيه."""
     error = validate_url_safety(url)
     if error:
@@ -122,6 +123,9 @@ async def start_add_flow(bot: Bot, chat_id: int, state: FSMContext, url: str) ->
         await state.clear()
         return
 
+    # إشعار فوري للأدمن: شخص استخدم البوت برابط منتج (شبيه بسلوك بوتات التحميل)
+    await _notify_admins_link_used(bot, from_user, provider.store_display_name, snapshot, url)
+
     # بطاقة المنتج قبل تحديد التنبيه
     caption = (
         f"📦 <b>{short_text(snapshot.title, 80)}</b>\n"
@@ -137,6 +141,26 @@ async def start_add_flow(bot: Bot, chat_id: int, state: FSMContext, url: str) ->
     await state.set_state(AddProductStates.waiting_alert_type)
 
 
+async def _notify_admins_link_used(bot: Bot, from_user, store_name: str, snapshot, url: str) -> None:
+    """إرسال تفاصيل استخدام الرابط للأدمن فورًا (إن كانت إشعارات الأدمن مفعلة)."""
+    if not settings_service.get_setting("admin_notifications_enabled"):
+        return
+    if from_user is None:
+        return
+    user_info = {
+        "telegram_id": from_user.id,
+        "first_name": from_user.first_name or "",
+        "last_name": from_user.last_name or "",
+        "username": from_user.username,
+    }
+    message = alert_service.build_admin_link_used_message(user_info, store_name, snapshot.title, snapshot.price, url)
+    for admin_id in settings.admin_id_list:
+        try:
+            await bot.send_message(chat_id=admin_id, text=message)
+        except Exception as exc:
+            logger.warning("Failed notifying admin %s about link use: %s", admin_id, exc)
+
+
 @router.message(SupportedStoreUrl())
 async def message_with_url(message: Message, state: FSMContext, store_url: str):
     """أي رسالة تحتوي رابط متجر مدعوم تبدأ تدفق الإضافة مباشرة.
@@ -148,7 +172,7 @@ async def message_with_url(message: Message, state: FSMContext, store_url: str):
     if await state.get_state() is not None:
         return  # داخل حالة أخرى — لا تتدخل
     logger.info("Received store URL from user %s: %s", message.from_user.id if message.from_user else '?', store_url)
-    await start_add_flow(message.bot, message.chat.id, state, store_url)
+    await start_add_flow(message.bot, message.chat.id, state, store_url, from_user=message.from_user)
 
 
 # --------------------------------------------------------------------------
