@@ -42,6 +42,28 @@ async def cmd_help(message: Message):
     await message.answer(t.HELP, reply_markup=kb.back_to_main_keyboard())
 
 
+@router.message(Command("add"))
+async def cmd_add(message: Message, state: FSMContext):
+    """أمر سريع من قائمة ☰ — نفس خطوة زر ➕ إضافة منتج جديد."""
+    await state.clear()
+    await message.answer(t.SEND_URL, reply_markup=kb.cancel_keyboard())
+
+
+@router.message(Command("my"))
+async def cmd_my(message: Message, state: FSMContext):
+    """أمر سريع من قائمة ☰ — عرض منتجاتي المتابعة."""
+    await state.clear()
+    trackings = tracking_service.get_user_trackings(message.from_user.id, include_inactive=True)
+    if not trackings:
+        await message.answer(t.MY_PRODUCTS_EMPTY, reply_markup=kb.back_to_main_keyboard())
+        return
+    lines = [t.MY_PRODUCTS_HEADER.format(count=len(trackings)), ""]
+    for index, tracking in enumerate(trackings, start=1):
+        lines.append(f"{index}. {_tracking_list_item(tracking)}")
+        lines.append("")
+    await message.answer("\n".join(lines), reply_markup=_products_list_keyboard(trackings))
+
+
 @router.callback_query(F.data == "menu:main")
 async def cb_main(callback: CallbackQuery, state: FSMContext, is_admin: bool):
     await state.clear()

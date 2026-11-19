@@ -14,6 +14,7 @@ from aiohttp import web
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
+from aiogram.types import BotCommand, MenuButtonCommands
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 
 from app.bot import handlers_add, handlers_admin, handlers_charts, handlers_user
@@ -26,6 +27,23 @@ from app.utils.logger import get_logger, setup_logging
 logger = get_logger("main")
 
 WEBHOOK_PATH = "/webhook"
+
+
+def build_bot_commands() -> list[BotCommand]:
+    """أوامر البوت — تظهر في زر ☰ Menu أسفل الشاشة وقائمة الأوامر."""
+    return [
+        BotCommand(command="start", description="🏠 القائمة الرئيسية"),
+        BotCommand(command="add", description="➕ إضافة منتج جديد"),
+        BotCommand(command="my", description="📦 منتجاتي المتابعة"),
+        BotCommand(command="help", description="ℹ️ المساعدة والشرح"),
+    ]
+
+
+async def register_bot_commands(bot: Bot) -> None:
+    """تسجيل أوامر البوت وتفعيل زر ☰ Menu الدائم."""
+    await bot.set_my_commands(build_bot_commands())
+    await bot.set_chat_menu_button(menu_button=MenuButtonCommands())
+    logger.info("Bot commands registered (%s) — persistent Menu button enabled", len(build_bot_commands()))
 
 
 def create_dispatcher() -> Dispatcher:
@@ -49,6 +67,7 @@ def create_dispatcher() -> Dispatcher:
 async def run_polling(bot: Bot, dispatcher: Dispatcher, scheduler) -> None:
     from app.services.price_check_service import run_startup_tasks
 
+    await register_bot_commands(bot)
     scheduler.start()
     try:
         await bot.delete_webhook(drop_pending_updates=False)
@@ -108,6 +127,7 @@ async def run_webhook(bot: Bot, dispatcher: Dispatcher, scheduler) -> None:
     await site.start()
     logger.info("HTTP server listening on port %s", port)
 
+    await register_bot_commands(bot)
     scheduler.start()
     await run_startup_tasks(bot)
     logger.info("Bot is running in webhook mode on %s", settings.external_url)

@@ -203,6 +203,16 @@ class TestChartsAndImport:
         # عدد المعالجات المُسجلة > 0
         assert len(dispatcher.sub_routers) == 4
 
+    def test_bot_commands_menu(self):
+        """قائمة أوامر زر ☰ Menu — أسماء صالحة وأوصاف عربية غير فارغة."""
+        from main import build_bot_commands
+        commands = build_bot_commands()
+        names = [c.command for c in commands]
+        assert names == ["start", "add", "my", "help"]
+        # أسماء الأوامر: حروف صغيرة وأرقام وشرطة سفلية فقط (قيود Telegram)
+        assert all(c.command.replace("_", "").isalnum() and c.command.islower() for c in commands)
+        assert all(c.description and len(c.description) <= 256 for c in commands)
+
     def test_url_validation_and_providers(self):
         """التعرف على الروابط وحماية SSRF."""
         from app.providers.registry import get_provider_for_url, validate_url_safety
